@@ -1,69 +1,108 @@
-import React, { ReactNode } from 'react'
-import { Link } from '@chakra-ui/react'
+import React, { useRef } from 'react'
+import { useState } from 'react'
 import {
   Container,
-  Box,
-  P,
-  VStack,
-  HStack,
   H1,
+  Button,
+  HStack,
+  VStack,
   H2,
+  Form,
+  TextField,
+  NumberInputField,
+  Table,
+  Thead,
+  Tr,
+  Th,
+  Tbody,
 } from '@northlight/ui'
-import { palette } from '@northlight/tokens'
-import { ExcelDropzone, ExcelRow } from './excel-dropzone.jsx'
+import { ScoreboardModal } from './modal.jsx'
+import { ExcelDropzone } from './excel-dropzone.jsx'
+import { UsersListItem } from './users/list-item.jsx'
+import { BaseScore, BaseUser, ExcelRow, User } from '../types'
 
-interface ExternalLinkProps {
-  href: string,
-  children: ReactNode,
-}
+import baseUsers from './users.js';
+import baseScores from './scores.js';
+import { addUsers, createUsers, getHighestScore } from '../utils'
+import './index.css'
 
-const ExternalLink = ({ href, children }: ExternalLinkProps) => <Link href={href} isExternal sx={ {color: palette.blue['500'], textDecoration: 'underline'} }>{ children }</Link>
+// This will be marked as an error but works anyway
+const scores = Object.groupBy(baseScores, (score: BaseScore) => score.userId);
+const initUsers: User[] = addUsers(baseUsers.map((user: BaseUser) => {
+  return {
+    ...user,
+    score: !scores[user._id] ? 0 :
+      getHighestScore(scores[user._id]
+        .map((scores: BaseScore) => scores.score))
+  }
+}), []);
 
-export default function App () {
+export default function App () {  
+  const excelRef = useRef<{ open: () => void, close: () => void }>(null);
+  const addRef = useRef<{ open: () => void, close: () => void }>(null);
+  
+  const [users, setUsers] = useState<User[]>(initUsers);
+
   function handleSheetData (data: ExcelRow[]) {
-    // replace this log with actual handling of the data
-    console.log(data)
+    // This will be marked as an error but works anyway
+    const scores: {[key: string]: ExcelRow[]} = Object.groupBy(data, (score: ExcelRow) => score.name);
+    
+    const users: User[] = [];
+    for (const name in scores) {
+      const row: ExcelRow[] = scores[name];
+      const user = createUsers(name, getHighestScore(row.map((scores: ExcelRow) => scores.score)))
+      users.push(user)
+    }
+    excelRef.current?.close()
+    // To prevent overwriting the content we append to it instead
+    setUsers((prevUsers) => addUsers(users, prevUsers))
   }
 
+  function handleSubmit (submit: { name: string, score: number }) {
+    addRef.current?.close()
+    // To prevent overwriting the content we append to it instead
+    setUsers((prevUsers) => addUsers(createUsers(submit.name, submit.score), prevUsers))
+  }
   return (
-    <Container maxW="6xl" padding="4">
-      <H1 marginBottom="4" >Mediatool exercise</H1>
-      <HStack spacing={10} align="flex-start">
-        <ExcelDropzone
-          onSheetDrop={ handleSheetData }
-          label="Import excel file here"
-        />
-        <VStack align="left">
-          <Box>
-            <H2>Initial site</H2>
-            <P>
-              Drop the excel file scores.xlsx that you will find
-              in this repo in the area to the left and watch the log output in the console.
-              We hope this is enough to get you started with the import.
-            </P>
-          </Box>
-          <Box>
-            <H2>Styling and Northlight</H2>
-            <P>
-              Styling is optional for this task and not a requirement. The styling for this app is using
-              our own library Northligth which in turn is based on Chakra UI. 
-              You <i>may</i> use it to give some style to the application but again, it is entierly optional.
-            </P>
-            <P>
-              Checkout <ExternalLink href="https://chakra-ui.com/">Chackra UI</ExternalLink> for
-              layout components such 
-              as <ExternalLink href="https://chakra-ui.com/docs/components/box">Box</ExternalLink>
-              , <ExternalLink href="https://chakra-ui.com/docs/components/stack">Stack</ExternalLink>
-              , <ExternalLink href="https://chakra-ui.com/docs/components/grid">Grid</ExternalLink>
-              , <ExternalLink href="https://chakra-ui.com/docs/components/flex">Flex</ExternalLink> and others.
-            </P>
-            <P>
-              Checkout <ExternalLink href="https://northlight.dev/">Northlight</ExternalLink> for
-              some of our components.
-            </P>
-          </Box>
-        </VStack>
+    <Container minW="240px" padding="4">
+      <HStack justify="space-between">
+        <H1 marginBottom="4" >Mediatool exercise</H1>
       </HStack>
+      <HStack justify="space-between">
+        <H2 marginBottom="4" >Users</H2>
+        <div className="flex gap-1">
+          <ScoreboardModal ref={excelRef} text="Import excel">
+            <Container padding="4" mt="8">
+              <ExcelDropzone
+                onSheetDrop={ handleSheetData }
+                label="Import excel file here"
+              ></ExcelDropzone>
+            </Container>
+          </ScoreboardModal>
+          <ScoreboardModal ref={addRef} text="Add user">
+            <Container padding="4" mt="8">
+              <Form initialValues={{ name: '', score: 0 }} onSubmit={handleSubmit}>
+                <TextField name="name" label="Name" />
+                <NumberInputField name="score" label="Score" />
+                <Button type="submit" w="full" mt="4">Submit</Button>
+              </Form>
+            </Container>
+          </ScoreboardModal>
+        </div>
+      </HStack>
+      <Table variant="rounded">
+        <Thead>
+          <Tr>
+            <Th>Name</Th>
+            <Th>Score</Th>
+          </Tr>
+        </Thead>
+        <Tbody>
+          {users.map((user: User, index) => (
+            <UsersListItem key={`${user._id}-${index}`} user={user} />
+          ))}
+        </Tbody>
+      </Table>
     </Container>
   ) 
 }

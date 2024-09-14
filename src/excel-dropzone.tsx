@@ -3,16 +3,7 @@ import Dropzone from 'react-dropzone'
 import { Box, Center } from '@northlight/ui'
 import { utils, read } from 'xlsx'
 import { palette } from '@northlight/tokens'
-
-export interface ExcelRow {
-  name: string
-  score: number
-}
-
-export interface ExcelDropzoneProps {
-  onSheetDrop: (rows: ExcelRow[]) => void
-  label: string
-}
+import { ExcelDropzoneProps } from '../types'
 
 export function ExcelDropzone (props: ExcelDropzoneProps) {
   const { label, onSheetDrop } = props
