@@ -62,7 +62,6 @@ export default function App () {
     }
   }
 
-  console.log(users)
   return (
     <Container minW="240px" padding="4">
       <HStack justify="space-between">
