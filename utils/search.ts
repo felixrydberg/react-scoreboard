@@ -6,11 +6,7 @@ export const userSearch = (arr: User[], user: User, minIndex: number) => {
   while (start <= end) {
     const mid = Math.floor((start + end) / 2);
     if (arr[mid].highest_score === user.highest_score) {
-      if (arr[mid].name < user.name) {
-        start = mid + 1;
-      } else {
-        return mid;
-      }
+      return mid + 1;
     } else if (arr[mid].highest_score > user.highest_score) {
       start = mid + 1;
     } else {

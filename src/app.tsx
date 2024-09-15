@@ -35,14 +35,17 @@ export default function App () {
   const [users, setUsers] = useState<User[]>(initUsers);
 
   function handleSheetData (data: ExcelRow[]) {
-    // This will be marked as an error but works anyway
-    const scores: {[key: string]: ExcelRow[]} = Object.groupBy(data, (score: ExcelRow) => score.name);
-    
-    const users: User[] = [];
-    for (const name in scores) {
-      const row: ExcelRow[] = scores[name];
-      const user = createUsers(name, row.map((score: ExcelRow) => score.score));
-      users.push(user)
+    const scores: {[key: string]: number[]} = {};
+    let users: User[] = [];
+    for (let i = 0; i < data.length; i++) {
+      const row: ExcelRow = data[i];
+      if (scores[row.name]) {
+        scores[row.name].push(row.score);
+      } else {
+        scores[row.name] = [row.score];
+      }
+      const user = createUsers(row.name, [...scores[row.name]]);
+      users = addUsers(user, users);
     }
     excelRef.current?.close()
     setUsers((prevUsers) => addUsers(users, prevUsers))
