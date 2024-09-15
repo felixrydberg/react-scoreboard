@@ -1,13 +1,14 @@
 import { User } from "../types/user";
 
-export const createUsers = (name: string, score: number[] | number, id = Date.now()): User => {
+export const createUsers = (name: string, scores: number[], id = Date.now()): User => {
   
-  const higestScore = !Array.isArray(score) ? score : score.reduce((largest, current) =>
-    (current > largest ? current : largest), score[0]);;
+  scores.sort((a, b) => b - a);
+  const higestScore = scores[0];
   return {
     _id: id,
     name,
-    score: higestScore
+    highest_score: higestScore,
+    scores,
   }
 }
 

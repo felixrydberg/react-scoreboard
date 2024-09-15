@@ -9,11 +9,8 @@ import {
   Form,
   TextField,
   NumberInputField,
-  Table,
-  Thead,
-  Tr,
-  Th,
-  Tbody,
+  Accordion,
+  Box,
 } from '@northlight/ui'
 import { ScoreboardModal } from './modal.jsx'
 import { ExcelDropzone } from './excel-dropzone.jsx'
@@ -22,18 +19,13 @@ import { BaseScore, BaseUser, ExcelRow, User } from '../types'
 
 import baseUsers from './users.js';
 import baseScores from './scores.js';
-import { addUsers, createUsers, getHighestScore } from '../utils'
+import { addUsers, createUsers, numberSearch } from '../utils'
 import './index.css'
 
 // This will be marked as an error but works anyway
 const scores = Object.groupBy(baseScores, (score: BaseScore) => score.userId);
 const initUsers: User[] = addUsers(baseUsers.map((user: BaseUser) => {
-  return {
-    ...user,
-    score: !scores[user._id] ? 0 :
-      getHighestScore(scores[user._id]
-        .map((scores: BaseScore) => scores.score))
-  }
+  return createUsers(user.name, scores[user._id].map((score: BaseScore) => score.score), user._id)
 }), []);
 
 export default function App () {  
@@ -49,19 +41,28 @@ export default function App () {
     const users: User[] = [];
     for (const name in scores) {
       const row: ExcelRow[] = scores[name];
-      const user = createUsers(name, getHighestScore(row.map((scores: ExcelRow) => scores.score)))
+      const user = createUsers(name, row.map((score: ExcelRow) => score.score));
       users.push(user)
     }
     excelRef.current?.close()
-    // To prevent overwriting the content we append to it instead
     setUsers((prevUsers) => addUsers(users, prevUsers))
   }
 
   function handleSubmit (submit: { name: string, score: number }) {
     addRef.current?.close()
-    // To prevent overwriting the content we append to it instead
-    setUsers((prevUsers) => addUsers(createUsers(submit.name, submit.score), prevUsers))
+
+    const user = users.find((user) => user.name === submit.name)
+    if (user) {
+      const index = numberSearch(user.scores, submit.score);
+      user.scores.splice(index, 0, submit.score);
+      user.highest_score = user.scores[0];
+      setUsers((prevUsers) => addUsers(user, prevUsers));
+    } else {
+      setUsers((prevUsers) => addUsers(createUsers(submit.name, [submit.score]), prevUsers));
+    }
   }
+
+  console.log(users)
   return (
     <Container minW="240px" padding="4">
       <HStack justify="space-between">
@@ -89,19 +90,15 @@ export default function App () {
           </ScoreboardModal>
         </div>
       </HStack>
-      <Table variant="rounded">
-        <Thead>
-          <Tr>
-            <Th>Name</Th>
-            <Th>Score</Th>
-          </Tr>
-        </Thead>
-        <Tbody>
-          {users.map((user: User, index) => (
-            <UsersListItem key={`${user._id}-${index}`} user={user} />
-          ))}
-        </Tbody>
-      </Table>
+      <Box w="100%" textAlign="center" fontWeight="bold" display="grid" gridTemplateColumns="50% 50%" gridTemplateRows="auto">
+        <span>Name</span>
+        <span>Score</span>
+      </Box>
+      <Accordion variant="rounded" allowMultiple>
+        {users.map((user: User, index) => (
+          <UsersListItem key={`${user._id}-${index}`} user={user} />
+        ))}
+      </Accordion>
     </Container>
   ) 
 }
