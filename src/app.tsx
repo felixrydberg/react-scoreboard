@@ -90,7 +90,7 @@ export default function App () {
           </ScoreboardModal>
         </div>
       </HStack>
-      <Box w="100%" textAlign="center" fontWeight="bold" display="grid" gridTemplateColumns="50% 50%" gridTemplateRows="auto">
+      <Box w="100%" textAlign="left" px="4" pr="10" fontWeight="bold" display="grid" gridTemplateColumns="50% 50%" gridTemplateRows="auto">
         <span>Name</span>
         <span>Score</span>
       </Box>
