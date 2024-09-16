@@ -15,7 +15,7 @@ import {
 import { ScoreboardModal } from './modal.jsx'
 import { ExcelDropzone } from './excel-dropzone.jsx'
 import { UsersListItem } from './users/list-item.jsx'
-import { BaseScore, BaseUser, ExcelRow, User } from '../types'
+import { ExcelRow, User } from '../types'
 
 import baseUsers from './users.js';
 import baseScores from './scores.js';
@@ -23,10 +23,24 @@ import { addUsers, createUsers, numberSearch } from '../utils'
 import './index.css'
 
 // This will be marked as an error but works anyway
-const scores = Object.groupBy(baseScores, (score: BaseScore) => score.userId);
-const initUsers: User[] = addUsers(baseUsers.map((user: BaseUser) => {
-  return createUsers(user.name, scores[user._id].map((score: BaseScore) => score.score), user._id)
-}), []);
+const users: {[key: User["_id"]]: User} = {};
+let initUsers: User[] = [];
+for (let i = 0; i < baseUsers.length; i++) {
+  const { _id, name, } = baseUsers[i];
+  users[_id] = {
+    _id,
+    name,
+    highest_score: 0,
+    scores: [],
+  };
+}
+
+for (let i = 0; i < baseScores.length; i++) {
+  const { userId, score } = baseScores[i];
+  const { _id, name, scores } = users[userId];
+  scores.push(score);
+  initUsers = addUsers(createUsers(name, scores, _id), initUsers);
+}
 
 export default function App () {  
   const excelRef = useRef<{ open: () => void, close: () => void }>(null);
