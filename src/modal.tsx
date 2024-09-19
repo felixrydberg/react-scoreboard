@@ -12,6 +12,7 @@ export const ScoreboardModal = forwardRef((props: {
     open: () => setModal(true),
     close: () => setModal(false),
   }));
+  console.log(`Modal "${props.text}" mounted`)
 
   return (
     <>

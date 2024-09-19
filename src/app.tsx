@@ -42,7 +42,8 @@ for (let i = 0; i < baseScores.length; i++) {
   initUsers = addUsers(createUsers(name, scores, _id), initUsers);
 }
 
-export default function App () {  
+export default function App () {
+  console.log("App mounted")
   const excelRef = useRef<{ open: () => void, close: () => void }>(null);
   const addRef = useRef<{ open: () => void, close: () => void }>(null);
   
